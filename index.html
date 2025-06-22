@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Beşiktaş Admin Panel</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #111; color: white; }
+    .container { max-width: 800px; margin: 30px auto; padding: 20px; }
+    input, textarea {
+      width: 100%; padding: 10px; margin: 5px 0 15px;
+      border-radius: 8px; border: none; background: #222; color: white;
+    }
+    button {
+      padding: 10px 20px; background: #0f0; color: black;
+      border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+      margin-right: 10px;
+    }
+    .edit-btn {
+      background: orange;
+    }
+    .delete-btn {
+      background: red;
+      color: white;
+    }
+    h2 { margin-top: 30px; color: #0f0; }
+    ul { padding: 0; list-style: none; }
+    li {
+      background: #222;
+      padding: 10px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+    }
+    .row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    #loginBox { max-width: 360px; margin: 60px auto; display: block; }
+    #panelContent { display: none; }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, deleteDoc, doc, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-sWB0nG4eAW2BndW8AvG6OVZFP_LjpQk",
+      authDomain: "admin-5ae49.firebaseapp.com",
+      projectId: "admin-5ae49",
+      storageBucket: "admin-5ae49.firebasestorage.app",
+      messagingSenderId: "220113764380",
+      appId: "1:220113764380:web:2f00c76595a48bf7721fd9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const loginBtn = document.getElementById("loginBtn");
+    loginBtn.onclick = async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        alert("Giriş başarısız: " + err.message);
+      }
+    };
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("panelContent").style.display = "block";
+        loadSocials();
+      }
+    });
+
+    async function loadSocials() {
+      const ul = document.getElementById("socialList");
+      ul.innerHTML = "";
+      const snapshot = await getDocs(collection(db, "social"));
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const li = document.createElement("li");
+        const platformInput = document.createElement("input");
+        const linkInput = document.createElement("input");
+        platformInput.value = data.platform;
+        linkInput.value = data.link;
+
+        const editBtn = document.createElement("button");
+        editBtn.innerText = "Düzenle";
+        editBtn.className = "edit-btn";
+        editBtn.onclick = async () => {
+          await updateDoc(doc(db, "social", docSnap.id), {
+            platform: platformInput.value,
+            link: linkInput.value
+          });
+          loadSocials();
+        };
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.innerText = "Sil";
+        deleteBtn.className = "delete-btn";
+        deleteBtn.onclick = async () => {
+          await deleteDoc(doc(db, "social", docSnap.id));
+          loadSocials();
+        };
+
+        const row = document.createElement("div");
+        row.className = "row";
+        row.appendChild(platformInput);
+        row.appendChild(linkInput);
+        row.appendChild(editBtn);
+        row.appendChild(deleteBtn);
+
+        li.appendChild(row);
+        ul.appendChild(li);
+      });
+    }
+
+    window.addSocial = async () => {
+      const platform = document.getElementById("platform").value;
+      const link = document.getElementById("link").value;
+      if (!platform || !link) return alert("Boş alan bırakma!");
+      await addDoc(collection(db, "social"), { platform, link });
+      document.getElementById("platform").value = "";
+      document.getElementById("link").value = "";
+      loadSocials();
+    };
+  </script>
+</head>
+<body>
+
+<div id="loginBox" class="container">
+  <h2>🔐 Admin Giriş</h2>
+  <input type="email" id="email" placeholder="E-posta" />
+  <input type="password" id="password" placeholder="Şifre" />
+  <button id="loginBtn">Giriş Yap</button>
+</div>
+
+<div id="panelContent" class="container">
+  <h1>🔗 Sosyal Medya Yönetimi</h1>
+  <input type="text" id="platform" placeholder="Platform (örn: instagram)" />
+  <input type="url" id="link" placeholder="Link" />
+  <button onclick="addSocial()">Ekle</button>
+  <ul id="socialList"></ul>
+</div>
+
+</body>
+</html>
