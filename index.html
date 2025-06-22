@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Beşiktaş Admin Panel</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #111; color: white; }
+    .container { max-width: 800px; margin: 30px auto; padding: 20px; }
+    input, textarea, select {
+      width: 100%; padding: 10px; margin: 5px 0 15px;
+      border-radius: 8px; border: none; background: #222; color: white;
+    }
+    button {
+      padding: 10px 20px; background: #0f0; color: black;
+      border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+    }
+    h2 { margin-top: 30px; color: #0f0; }
+    .section { margin-bottom: 40px; }
+    ul { padding: 0; list-style: none; }
+    li {
+      background: #222; padding: 10px; margin-bottom: 6px;
+      border-radius: 8px; display: flex; justify-content: space-between;
+    }
+    .delete-btn {
+      background: red; color: white; border: none; border-radius: 6px;
+      padding: 4px 10px; cursor: pointer;
+    }
+    #loginBox { max-width: 360px; margin: 60px auto; display: none; }
+    #panelContent { display: none; }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, deleteDoc, doc, getDocs, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-sWB0nG4eAW2BndW8AvG6OVZFP_LjpQk",
+      authDomain: "admin-5ae49.firebaseapp.com",
+      projectId: "admin-5ae49",
+      storageBucket: "admin-5ae49.firebasestorage.app",
+      messagingSenderId: "220113764380",
+      appId: "1:220113764380:web:2f00c76595a48bf7721fd9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Login
+    const loginBtn = document.getElementById("loginBtn");
+    loginBtn.onclick = async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        alert("Giriş başarısız: " + err.message);
+      }
+    };
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("panelContent").style.display = "block";
+        loadData();
+      }
+    });
+
+    // Load Data
+    async function loadData() {
+      await loadList("music", "musicList", ["title", "url"]);
+      await loadList("social", "socialList", ["platform", "link"]);
+      const docRef = doc(db, "settings", "main");
+      const snap = await getDocs(collection(db, "settings"));
+      snap.forEach((d) => {
+        const data = d.data();
+        if (data.welcomeText) document.getElementById("welcomeText").value = data.welcomeText;
+        if (data.dailyQuote) document.getElementById("dailyQuote").value = data.dailyQuote;
+        if (data.sitePassword) document.getElementById("sitePassword").value = data.sitePassword;
+      });
+    }
+
+    async function loadList(col, ulId, fields) {
+      const ul = document.getElementById(ulId);
+      ul.innerHTML = "";
+      const snap = await getDocs(collection(db, col));
+      snap.forEach(docSnap => {
+        const data = docSnap.data();
+        const li = document.createElement("li");
+        li.innerHTML = fields.map(f => `<b>${data[f]}</b>`).join(" | ") +
+          ` <button class='delete-btn' onclick="deleteItem('${col}', '${docSnap.id}', '${ulId}', ${JSON.stringify(fields)})">Sil</button>`;
+        ul.appendChild(li);
+      });
+    }
+
+    window.addMusic = async () => {
+      const title = document.getElementById("musicTitle").value;
+      const url = document.getElementById("musicUrl").value;
+      if (!title || !url) return alert("Eksik bilgi!");
+      await addDoc(collection(db, "music"), { title, url });
+      document.getElementById("musicTitle").value = "";
+      document.getElementById("musicUrl").value = "";
+      loadList("music", "musicList", ["title", "url"]);
+    };
+
+    window.addSocial = async () => {
+      const platform = document.getElementById("platform").value;
+      const link = document.getElementById("link").value;
+      if (!platform || !link) return alert("Eksik bilgi!");
+      await addDoc(collection(db, "social"), { platform, link });
+      document.getElementById("platform").value = "";
+      document.getElementById("link").value = "";
+      loadList("social", "socialList", ["platform", "link"]);
+    };
+
+    window.updateSettings = async () => {
+      const ref = doc(db, "settings", "main");
+      await setDoc(ref, {
+        welcomeText: document.getElementById("welcomeText").value,
+        dailyQuote: document.getElementById("dailyQuote").value,
+        sitePassword: document.getElementById("sitePassword").value
+      });
+      alert("Ayarlar kaydedildi.");
+    };
+
+    window.deleteItem = async (col, id, ulId, fields) => {
+      await deleteDoc(doc(db, col, id));
+      loadList(col, ulId, fields);
+    };
+  </script>
+</head>
+<body>
+
+<div id="loginBox" class="container">
+  <h2>🔐 Admin Giriş</h2>
+  <input type="email" id="email" placeholder="E-posta" />
+  <input type="password" id="password" placeholder="Şifre" />
+  <button id="loginBtn">Giriş Yap</button>
+</div>
+
+<div id="panelContent" class="container">
+  <h1>⚙️ Beşiktaş Admin Panel</h1>
+
+  <div class="section">
+    <h2>🎵 Müzik Yönetimi</h2>
+    <input type="text" id="musicTitle" placeholder="Şarkı Adı" />
+    <input type="url" id="musicUrl" placeholder="MP3 Linki" />
+    <button onclick="addMusic()">Ekle</button>
+    <ul id="musicList"></ul>
+  </div>
+
+  <div class="section">
+    <h2>🔗 Sosyal Medya Linkleri</h2>
+    <input type="text" id="platform" placeholder="Platform (örn: instagram)" />
+    <input type="url" id="link" placeholder="Link" />
+    <button onclick="addSocial()">Ekle</button>
+    <ul id="socialList"></ul>
+  </div>
+
+  <div class="section">
+    <h2>👋 Hoşgeldin Yazısı</h2>
+    <textarea id="welcomeText" rows="2"></textarea>
+  </div>
+
+  <div class="section">
+    <h2>💬 Günün Sözü</h2>
+    <textarea id="dailyQuote" rows="2"></textarea>
+  </div>
+
+  <div class="section">
+    <h2>🔐 Giriş Şifresi (Site için)</h2>
+    <input type="text" id="sitePassword" maxlength="4" />
+    <button onclick="updateSettings()">Ayarları Kaydet</button>
+  </div>
+</div>
+
+</body>
+</html>
