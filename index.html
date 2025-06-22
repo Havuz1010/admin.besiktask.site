@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sosyal Medya Yönetimi</title>
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #0f0;
+      text-align: center;
+    }
+    .panel {
+      max-width: 600px;
+      margin: auto;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0 10px;
+      border: none;
+      border-radius: 8px;
+      background: #222;
+      color: white;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 5px;
+      background: #0f0;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .item {
+      background: #1a1a1a;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+    .item input {
+      width: calc(100% - 20px);
+      margin-bottom: 8px;
+    }
+    .item button {
+      margin-right: 10px;
+    }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-sWB0nG4eAW2BndW8AvG6OVZFP_LjpQk",
+      authDomain: "admin-5ae49.firebaseapp.com",
+      projectId: "admin-5ae49",
+      storageBucket: "admin-5ae49.firebasestorage.app",
+      messagingSenderId: "220113764380",
+      appId: "1:220113764380:web:2f00c76595a48bf7721fd9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const socialList = document.getElementById("socialList");
+
+    async function loadSocials() {
+      socialList.innerHTML = "";
+      const query = await getDocs(collection(db, "social"));
+      query.forEach((docSnap) => {
+        const data = docSnap.data();
+        const div = document.createElement("div");
+        div.className = "item";
+
+        const inputPlatform = document.createElement("input");
+        inputPlatform.value = data.platform;
+
+        const inputLink = document.createElement("input");
+        inputLink.value = data.link;
+
+        const updateBtn = document.createElement("button");
+        updateBtn.textContent = "Güncelle";
+        updateBtn.onclick = async () => {
+          await updateDoc(doc(db, "social", docSnap.id), {
+            platform: inputPlatform.value,
+            link: inputLink.value
+          });
+          loadSocials();
+        };
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Sil";
+        deleteBtn.style.background = "#f00";
+        deleteBtn.style.color = "#fff";
+        deleteBtn.onclick = async () => {
+          await deleteDoc(doc(db, "social", docSnap.id));
+          loadSocials();
+        };
+
+        div.appendChild(inputPlatform);
+        div.appendChild(inputLink);
+        div.appendChild(updateBtn);
+        div.appendChild(deleteBtn);
+
+        socialList.appendChild(div);
+      });
+    }
+
+    document.getElementById("addBtn").onclick = async () => {
+      const platform = document.getElementById("platform").value;
+      const link = document.getElementById("link").value;
+      if (!platform || !link) return alert("Boş alan bırakmayın!");
+      await addDoc(collection(db, "social"), { platform, link });
+      document.getElementById("platform").value = "";
+      document.getElementById("link").value = "";
+      loadSocials();
+    };
+
+    loadSocials();
+  </script>
+</head>
+<body>
+  <div class="panel">
+    <h1>🔗 Sosyal Medya Yönetimi</h1>
+    <input type="text" id="platform" placeholder="Platform (örn: instagram)" />
+    <input type="url" id="link" placeholder="Link (https://...)" />
+    <button id="addBtn">Ekle</button>
+    <div id="socialList"></div>
+  </div>
+</body>
+</html>
