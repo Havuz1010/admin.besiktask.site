@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Firebase Admin Panel</title>
+  <script type="module">
+    // Firebase importları
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, deleteDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-sWB0nG4eAW2BndW8AvG6OVZFP_LjpQk",
+      authDomain: "admin-5ae49.firebaseapp.com",
+      projectId: "admin-5ae49",
+      storageBucket: "admin-5ae49.firebasestorage.app",
+      messagingSenderId: "220113764380",
+      appId: "1:220113764380:web:2f00c76595a48bf7721fd9",
+      measurementId: "G-Q4VC148L3R"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function loadMusic() {
+      const list = document.getElementById("musicList");
+      list.innerHTML = "";
+      const snapshot = await getDocs(collection(db, "music"));
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const li = document.createElement("li");
+        li.innerHTML = `<b>${data.title}</b><br><small>${data.url}</small>
+          <button onclick="deleteMusic('${docSnap.id}')">Sil</button>`;
+        list.appendChild(li);
+      });
+    }
+
+    async function addMusic() {
+      const title = document.getElementById("musicTitle").value;
+      const url = document.getElementById("musicUrl").value;
+      if (!title || !url) return alert("Boş alan bırakma!");
+      await addDoc(collection(db, "music"), { title, url });
+      document.getElementById("musicTitle").value = "";
+      document.getElementById("musicUrl").value = "";
+      loadMusic();
+    }
+
+    async function deleteMusic(id) {
+      await deleteDoc(doc(db, "music", id));
+      loadMusic();
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadMusic();
+      document.getElementById("addMusicBtn").onclick = addMusic;
+    });
+  </script>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    input {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      border: none;
+      border-radius: 8px;
+      background: #222;
+      color: white;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: #0f0;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    ul {
+      margin-top: 20px;
+      padding: 0;
+      list-style: none;
+    }
+    li {
+      margin-bottom: 12px;
+      background: #1c1c1c;
+      padding: 10px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎧 Admin Panel - Şarkı Yönetimi</h1>
+  <label>Şarkı Adı:</label>
+  <input type="text" id="musicTitle" placeholder="Beşiktaş Marşı" />
+  <label>MP3 Linki:</label>
+  <input type="url" id="musicUrl" placeholder="https://..." />
+  <button id="addMusicBtn">Şarkı Ekle</button>
+
+  <ul id="musicList"></ul>
+</body>
+</html>
