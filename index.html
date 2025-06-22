@@ -14,7 +14,7 @@
     }
     button {
       padding: 10px 20px; margin: 5px 0;
-      border: none; border-radius: 8px; /* changed border to border-radius for consistency */
+      border: none; border-radius: 8px;
       background: #0f0; color: #000; font-weight: bold; cursor: pointer;
     }
     .danger { background: #f00; color: #fff; }
@@ -32,7 +32,7 @@
     import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyD-sWB0nG4eAW2BndW8AvG6OVZFP_LjpQk", // BU API ANAHTARI ENTEGRE EDİLDİ
+      apiKey: "AIzaSyD-sWB0nG4eAW2BndW8AvG6OVZFP_LjpQk", // API Anahtarınız burada
       authDomain: "admin-5ae49.firebaseapp.com",
       projectId: "admin-5ae49",
       storageBucket: "admin-5ae49.firebasestorage.app",
@@ -46,10 +46,11 @@
 
     const loginBox = document.getElementById("loginBox");
     const panel = document.getElementById("panel");
+    const passwordInput = document.getElementById("password"); // Password inputunu yakala
 
     document.getElementById("loginBtn").onclick = async () => {
       const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+      const password = passwordInput.value; // Yakalanan inputu kullan
       try {
         await signInWithEmailAndPassword(auth, email, password);
       } catch (err) {
@@ -57,11 +58,19 @@
       }
     };
 
+    // Şifre inputuna Enter tuşu dinleyicisi ekle
+    passwordInput.addEventListener("keydown", async (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault(); // Varsayılan Enter davranışını (örneğin form gönderme) engelle
+        document.getElementById("loginBtn").click(); // Giriş butonunun tıklama olayını tetikle
+      }
+    });
+
     onAuthStateChanged(auth, user => {
       if (user) {
         loginBox.style.display = "none";
         panel.style.display = "block";
-        loadMusicList(); // Sadece müzik listesini yükle
+        loadMusicList();
       } else {
         loginBox.style.display = "block";
         panel.style.display = "none";
@@ -70,10 +79,9 @@
 
     document.getElementById("logoutBtn").onclick = () => signOut(auth).then(() => location.reload());
 
-    // Sadece müzik listesini yüklemek için özel fonksiyon
     async function loadMusicList() {
       const container = document.getElementById("musicList");
-      container.innerHTML = ""; // Mevcut listeyi temizle
+      container.innerHTML = "";
       const items = await getDocs(collection(db, "music"));
       items.forEach(docSnap => {
         const data = docSnap.data();
@@ -94,7 +102,7 @@
             url: urlInput.value
           });
           alert("Şarkı güncellendi!");
-          loadMusicList(); // Listeyi yeniden yükle
+          loadMusicList();
         };
 
         const deleteBtn = document.createElement("button");
@@ -104,7 +112,7 @@
           if (confirm("Bu şarkıyı silmek istediğinizden emin misiniz?")) {
             await deleteDoc(doc(db, "music", docSnap.id));
             alert("Şarkı silindi!");
-            loadMusicList(); // Listeyi yeniden yükle
+            loadMusicList();
           }
         };
         div.append(titleInput, urlInput, saveBtn, deleteBtn);
@@ -112,7 +120,6 @@
       });
     }
 
-    // Yeni şarkı ekleme fonksiyonu
     window.addMusic = async () => {
       const title = document.getElementById("musicTitle").value;
       const url = document.getElementById("musicUrl").value;
@@ -123,10 +130,8 @@
       document.getElementById("musicTitle").value = "";
       document.getElementById("musicUrl").value = "";
       alert("Şarkı eklendi!");
-      loadMusicList(); // Listeyi yeniden yükle
+      loadMusicList();
     };
-
-    // Diğer ayar fonksiyonlarını kaldırıyoruz veya pasif bırakıyoruz
 
   </script>
 </head>
@@ -153,7 +158,7 @@
     <div id="musicList"></div>
   </div>
 
-  </div>
+</div>
 
 </body>
 </html>
