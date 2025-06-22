@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Panel</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #121212;
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 { color: #0f0; }
+    .section {
+      background: #1c1c1c;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    input[type="text"], input[type="url"], select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 4px;
+      border-radius: 8px;
+      border: none;
+      background: #222;
+      color: white;
+    }
+    button {
+      margin-top: 12px;
+      padding: 10px 20px;
+      background: #0f0;
+      color: black;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    ul { list-style: none; padding: 0; }
+    li {
+      background: #222;
+      margin: 6px 0;
+      padding: 8px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .delete-btn {
+      background: #f00;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 4px 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>⚙️ Admin Panel</h1>
+
+<div class="section">
+  <h2>🎵 Müzik Listesi</h2>
+  <label>MP3 Linki</label>
+  <input type="url" id="musicUrl" placeholder="https://..." />
+  <label>Şarkı Adı</label>
+  <input type="text" id="musicName" placeholder="Şarkı adı" />
+  <button onclick="addMusic()">Ekle</button>
+
+  <ul id="musicList"></ul>
+</div>
+
+<div class="section">
+  <h2>🔗 Sosyal Medya Bağlantıları</h2>
+  <label>Platform</label>
+  <select id="socialType">
+    <option value="globe">Web</option>
+    <option value="instagram">Instagram</option>
+    <option value="tiktok">TikTok</option>
+    <option value="snapchat-ghost">Snapchat</option>
+    <option value="spotify">Spotify</option>
+  </select>
+  <label>Bağlantı</label>
+  <input type="url" id="socialLink" placeholder="https://..." />
+  <button onclick="addSocial()">Ekle</button>
+
+  <ul id="socialList"></ul>
+</div>
+
+<div class="section">
+  <h2>🎨 Tema Rengi</h2>
+  <label>Arka Plan Rengi</label>
+  <input type="color" id="bgColor" value="#121212" />
+  <label>Yazı Rengi</label>
+  <input type="color" id="textColor" value="#ffffff" />
+  <button onclick="applyTheme()">Temayı Uygula</button>
+</div>
+
+<script>
+  const musicList = document.getElementById("musicList");
+  const socialList = document.getElementById("socialList");
+
+  function addMusic() {
+    const url = document.getElementById("musicUrl").value;
+    const name = document.getElementById("musicName").value;
+    if (!url || !name) return;
+    const li = document.createElement("li");
+    li.innerHTML = name + " <button class='delete-btn' onclick='this.parentElement.remove()'>Sil</button>";
+    musicList.appendChild(li);
+    document.getElementById("musicUrl").value = "";
+    document.getElementById("musicName").value = "";
+  }
+
+  function addSocial() {
+    const type = document.getElementById("socialType").value;
+    const link = document.getElementById("socialLink").value;
+    if (!link) return;
+    const li = document.createElement("li");
+    li.innerHTML = `<i class="fab fa-${type}"></i> ${link} <button class='delete-btn' onclick='this.parentElement.remove()'>Sil</button>`;
+    socialList.appendChild(li);
+    document.getElementById("socialLink").value = "";
+  }
+
+  function applyTheme() {
+    const bg = document.getElementById("bgColor").value;
+    const text = document.getElementById("textColor").value;
+    document.body.style.background = bg;
+    document.body.style.color = text;
+  }
+</script>
+</body>
+</html>
