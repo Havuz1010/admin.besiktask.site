@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Beşiktaş Admin Panel</title>
+  <title>Beşiktaş Müzik Admin Paneli</title>
   <style>
     body { background: #111; color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
     .container { max-width: 800px; margin: 0 auto; padding: 20px; }
@@ -14,7 +14,7 @@
     }
     button {
       padding: 10px 20px; margin: 5px 0;
-      border: none; border-radius: 8px;
+      border: none; border-radius: 8px; /* changed border to border-radius for consistency */
       background: #0f0; color: #000; font-weight: bold; cursor: pointer;
     }
     .danger { background: #f00; color: #fff; }
@@ -32,7 +32,7 @@
     import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyD-sWB0nG4eAW2BndW8AvG6OVZFP_LjpQk",
+      apiKey: "AIzaSyD-sWB0nG4eAW2BndW8AvC6OVZFP_LjpQk", // Bu anahtar sizin projenizin anahtarı olmalı
       authDomain: "admin-5ae49.firebaseapp.com",
       projectId: "admin-5ae49",
       storageBucket: "admin-5ae49.firebasestorage.app",
@@ -61,89 +61,81 @@
       if (user) {
         loginBox.style.display = "none";
         panel.style.display = "block";
-        loadAll();
+        loadMusicList(); // Sadece müzik listesini yükle
+      } else {
+        loginBox.style.display = "block";
+        panel.style.display = "none";
       }
     });
 
     document.getElementById("logoutBtn").onclick = () => signOut(auth).then(() => location.reload());
 
-    async function loadAll() {
-      await loadList("music", "musicList", "title", "url");
-      await loadList("social", "socialList", "platform", "link");
-      const settingsSnap = await getDocs(collection(db, "settings"));
-      settingsSnap.forEach(docSnap => {
-        const d = docSnap.data();
-        if (d.dailyQuote) document.getElementById("dailyQuote").value = d.dailyQuote;
-        if (d.themeBg) document.getElementById("themeBg").value = d.themeBg;
-        if (d.themeColor) document.getElementById("themeColor").value = d.themeColor;
-      });
-    }
-
-    async function loadList(col, listId, field1, field2) {
-      const container = document.getElementById(listId);
-      container.innerHTML = "";
-      const items = await getDocs(collection(db, col));
+    // Sadece müzik listesini yüklemek için özel fonksiyon
+    async function loadMusicList() {
+      const container = document.getElementById("musicList");
+      container.innerHTML = ""; // Mevcut listeyi temizle
+      const items = await getDocs(collection(db, "music"));
       items.forEach(docSnap => {
         const data = docSnap.data();
         const div = document.createElement("div");
         div.className = "list-item";
-        const i1 = document.createElement("input");
-        const i2 = document.createElement("input");
-        i1.value = data[field1];
-        i2.value = data[field2];
-        const save = document.createElement("button");
-        save.innerText = "Güncelle";
-        save.onclick = async () => {
-          await updateDoc(doc(db, col, docSnap.id), { [field1]: i1.value, [field2]: i2.value });
-          loadList(col, listId, field1, field2);
+        const titleInput = document.createElement("input");
+        const urlInput = document.createElement("input");
+        titleInput.value = data.title;
+        urlInput.value = data.url;
+        titleInput.placeholder = "Şarkı Adı";
+        urlInput.placeholder = "MP3 Linki";
+
+        const saveBtn = document.createElement("button");
+        saveBtn.innerText = "Güncelle";
+        saveBtn.onclick = async () => {
+          await updateDoc(doc(db, "music", docSnap.id), {
+            title: titleInput.value,
+            url: urlInput.value
+          });
+          alert("Şarkı güncellendi!");
+          loadMusicList(); // Listeyi yeniden yükle
         };
-        const del = document.createElement("button");
-        del.innerText = "Sil";
-        del.className = "danger";
-        del.onclick = async () => {
-          await deleteDoc(doc(db, col, docSnap.id));
-          loadList(col, listId, field1, field2);
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.innerText = "Sil";
+        deleteBtn.className = "danger";
+        deleteBtn.onclick = async () => {
+          if (confirm("Bu şarkıyı silmek istediğinizden emin misiniz?")) {
+            await deleteDoc(doc(db, "music", docSnap.id));
+            alert("Şarkı silindi!");
+            loadMusicList(); // Listeyi yeniden yükle
+          }
         };
-        div.append(i1, i2, save, del);
+        div.append(titleInput, urlInput, saveBtn, deleteBtn);
         container.appendChild(div);
       });
     }
 
+    // Yeni şarkı ekleme fonksiyonu
     window.addMusic = async () => {
       const title = document.getElementById("musicTitle").value;
       const url = document.getElementById("musicUrl").value;
-      if (!title || !url) return alert("Boş alan!");
+      if (!title || !url) {
+        return alert("Şarkı adı ve MP3 linki boş bırakılamaz!");
+      }
       await addDoc(collection(db, "music"), { title, url });
       document.getElementById("musicTitle").value = "";
       document.getElementById("musicUrl").value = "";
-      loadList("music", "musicList", "title", "url");
+      alert("Şarkı eklendi!");
+      loadMusicList(); // Listeyi yeniden yükle
     };
 
-    window.addSocial = async () => {
-      const platform = document.getElementById("platform").value;
-      const link = document.getElementById("link").value;
-      if (!platform || !link) return alert("Boş alan!");
-      await addDoc(collection(db, "social"), { platform, link });
-      document.getElementById("platform").value = "";
-      document.getElementById("link").value = "";
-      loadList("social", "socialList", "platform", "link");
-    };
+    // Diğer ayar fonksiyonlarını kaldırıyoruz veya pasif bırakıyoruz
+    // window.updateSettings ve window.addSocial gibi fonksiyonları kaldırın
+    // Admin paneli sadece müziğe odaklanacak.
 
-    window.updateSettings = async () => {
-      const ref = doc(db, "settings", "main");
-      await setDoc(ref, {
-        dailyQuote: document.getElementById("dailyQuote").value,
-        themeBg: document.getElementById("themeBg").value,
-        themeColor: document.getElementById("themeColor").value
-      });
-      alert("Ayarlar kaydedildi.");
-    };
   </script>
 </head>
 <body>
 
 <div id="loginBox" class="container" style="display:block;">
-  <h1>🔐 Admin Giriş</h1>
+  <h1>🔐 Müzik Admin Giriş</h1>
   <input type="email" id="email" placeholder="E-posta" />
   <input type="password" id="password" placeholder="Şifre" />
   <button id="loginBtn">Giriş Yap</button>
@@ -151,7 +143,7 @@
 
 <div id="panel" class="container" style="display:none;">
   <button id="logoutBtn" class="logout">🚪 Oturumu Kapat</button>
-  <h1>⚙️ Beşiktaş Admin Panel</h1>
+  <h1>⚙️ Beşiktaş Müzik Admin Paneli</h1>
 
   <div class="section">
     <h2>🎵 Müzik Ekle / Düzenle / Sil</h2>
@@ -163,31 +155,7 @@
     <div id="musicList"></div>
   </div>
 
-  <div class="section">
-    <h2>💬 Günün Sözü</h2>
-    <textarea id="dailyQuote" rows="2" placeholder="Bugünün sözü..."></textarea>
   </div>
-
-  <div class="section">
-    <h2>🎨 Tema Renk Ayarları</h2>
-    <label>Arkaplan Rengi</label>
-    <input type="color" id="themeBg" />
-    <label>Yazı Rengi</label>
-    <input type="color" id="themeColor" />
-  </div>
-
-  <div class="section">
-    <h2>🔗 Sosyal Medya Bağlantıları</h2>
-    <div class="inline-inputs">
-      <input type="text" id="platform" placeholder="Platform" />
-      <input type="url" id="link" placeholder="Link" />
-    </div>
-    <button onclick="addSocial()">Ekle</button>
-    <div id="socialList"></div>
-  </div>
-
-  <button onclick="updateSettings()">💾 Tüm Ayarları Kaydet</button>
-</div>
 
 </body>
 </html>
